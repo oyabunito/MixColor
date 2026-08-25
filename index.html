@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#faf8f5" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="description" content="Calculateur de mélanges de peinture : trouvez les proportions pour obtenir la couleur voulue, ou simulez un mélange." />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icons/icon-192.svg" />
+<title>MixColor — Calculateur de mélanges</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="app-header">
+  <h1>MixColor</h1>
+</header>
+
+<main>
+  <section class="paint-type" aria-label="Type de peinture">
+    <div class="chip-row" id="paint-type-row" role="radiogroup" aria-label="Type de peinture"></div>
+    <p class="tip" id="paint-type-tip"></p>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="Mode">
+    <button class="tab" id="tab-find" role="tab" aria-selected="true">Trouver un mélange</button>
+    <button class="tab" id="tab-simulate" role="tab" aria-selected="false">Simuler un mélange</button>
+  </nav>
+
+  <section id="panel-find" class="panel" role="tabpanel">
+    <div class="card">
+      <label class="field-label" for="target-color">Couleur recherchée</label>
+      <div class="color-picker-row">
+        <input type="color" id="target-color" value="#2f5233" aria-label="Choisir la couleur cible" />
+        <input type="text" id="target-hex" value="#2f5233" maxlength="7" aria-label="Code hexadécimal" />
+      </div>
+      <div class="chip-row" id="preset-row" aria-label="Couleurs suggérées"></div>
+    </div>
+
+    <div class="card result-card">
+      <div class="swatch-compare">
+        <div class="swatch-block">
+          <div class="swatch" id="swatch-target"></div>
+          <span>Cible</span>
+        </div>
+        <div class="swatch-block">
+          <div class="swatch" id="swatch-result"></div>
+          <span>Obtenu</span>
+        </div>
+      </div>
+      <p class="precision" id="precision-text"></p>
+      <ul class="parts-list" id="parts-list"></ul>
+      <button class="btn-copy" id="copy-find" type="button">Copier le code obtenu</button>
+    </div>
+  </section>
+
+  <section id="panel-simulate" class="panel" role="tabpanel" hidden>
+    <div class="card">
+      <p class="field-label">Choisissez jusqu'à 3 couleurs</p>
+      <div class="chip-row" id="pigment-row" aria-label="Pigments disponibles"></div>
+    </div>
+
+    <div class="card" id="parts-editor-card" hidden>
+      <p class="field-label">Proportions (en parts)</p>
+      <ul class="parts-editor" id="parts-editor"></ul>
+    </div>
+
+    <div class="card result-card" id="simulate-result-card" hidden>
+      <div class="swatch-block swatch-block-solo">
+        <div class="swatch swatch-large" id="swatch-simulate"></div>
+        <span id="simulate-name"></span>
+      </div>
+      <p class="hex-readout" id="simulate-hex"></p>
+      <p class="breakdown" id="simulate-breakdown"></p>
+      <button class="btn-copy" id="copy-simulate" type="button">Copier le code</button>
+    </div>
+
+    <p class="empty-hint" id="simulate-empty">Touchez une ou plusieurs couleurs ci-dessus pour voir le résultat du mélange.</p>
+  </section>
+</main>
+
+<script src="js/color.js"></script>
+<script src="js/palettes.js"></script>
+<script src="js/mixer.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
