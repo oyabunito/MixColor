@@ -41,7 +41,48 @@ function findBestMix(targetHex, pigments) {
     }
   }
 
+  best = refineLocally(best, targetLab);
+
   return formatResult(best);
+}
+
+/**
+ * Repart de la meilleure combinaison trouvée par la recherche large (pas de
+ * 5 à 10%) et affine les proportions au pourcent près, dans un voisinage
+ * autour de cet optimum grossier.
+ */
+function refineLocally(best, targetLab) {
+  if (best.combo.length < 2) return best;
+
+  const guess = best.weights.map((w) => Math.round(w * 100));
+  let refined = best;
+
+  const tryWeights = (weights) => {
+    const rgb01 = mixPigments(best.combo, weights);
+    const dist = labDistance(rgbToLab(rgb01.map((v) => v * 255)), targetLab);
+    if (dist < refined.dist) {
+      refined = { combo: best.combo, weights: normalize(weights), dist, rgb01 };
+    }
+  };
+
+  const RADIUS = 6;
+  if (best.combo.length === 2) {
+    const g = guess[0];
+    for (let a = Math.max(1, g - RADIUS); a <= Math.min(99, g + RADIUS); a++) {
+      tryWeights([a, 100 - a]);
+    }
+  } else {
+    const [ga, gb] = guess;
+    for (let a = Math.max(1, ga - RADIUS); a <= Math.min(98, ga + RADIUS); a++) {
+      for (let b = Math.max(1, gb - RADIUS); b <= Math.min(99 - a, gb + RADIUS); b++) {
+        const c = 100 - a - b;
+        if (c < 1) continue;
+        tryWeights([a, b, c]);
+      }
+    }
+  }
+
+  return refined;
 }
 
 function normalize(weights) {

@@ -38,6 +38,8 @@ const PIGMENTS = [
   { id: 'vert', name: 'Vert', ryb: [0, 1, 1], types: ['acrylique', 'huile', 'gouache', 'aquarelle'] },
   { id: 'violet', name: 'Violet', ryb: [1, 0, 1], types: ['acrylique', 'huile', 'gouache', 'aquarelle'] },
   { id: 'ocre', name: 'Ocre jaune', ryb: [0.4, 0.55, 0.15], types: ['acrylique', 'huile', 'gouache', 'aquarelle'] },
+  { id: 'cyan', name: 'Bleu cyan (phtalo)', ryb: [0, 0.25, 0.7], types: ['acrylique', 'huile', 'gouache', 'aquarelle'] },
+  { id: 'carmin', name: 'Rouge alizarine (carmin)', ryb: [1, 0, 0.5], types: ['acrylique', 'huile', 'gouache', 'aquarelle'] },
 ];
 
 function pigmentsForType(typeId) {
