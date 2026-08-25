@@ -10,6 +10,30 @@
   color-scheme: light;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1c1a17;
+    --surface: #262320;
+    --ink: #f2ede6;
+    --ink-soft: #b3aa9e;
+    --line: #3a352f;
+    --accent: #e2764f;
+    --accent-ink: #1c1a17;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #1c1a17;
+  --surface: #262320;
+  --ink: #f2ede6;
+  --ink-soft: #b3aa9e;
+  --line: #3a352f;
+  --accent: #e2764f;
+  --accent-ink: #1c1a17;
+  color-scheme: dark;
+}
+
 * { box-sizing: border-box; }
 
 html, body {
@@ -26,6 +50,7 @@ body {
 }
 
 .app-header {
+  position: relative;
   padding: max(16px, env(safe-area-inset-top)) 20px 8px;
   text-align: center;
 }
@@ -35,6 +60,23 @@ body {
   font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: -0.01em;
+}
+
+.theme-toggle {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: 16px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 main {
@@ -80,7 +122,7 @@ main {
 
 .chip[aria-pressed="true"], .chip[aria-checked="true"] {
   background: var(--ink);
-  color: #fff;
+  color: var(--bg);
   border-color: var(--ink);
 }
 
@@ -180,6 +222,7 @@ input[type="color"] {
   font-size: 0.95rem;
   background: var(--bg);
   color: var(--ink);
+  margin-bottom: 8px;
 }
 
 .search-input::-webkit-search-cancel-button {
@@ -419,7 +462,7 @@ input[type="color"] {
   width: 100%;
   border: none;
   background: var(--ink);
-  color: #fff;
+  color: var(--bg);
   padding: 12px;
   border-radius: 10px;
   font-size: 0.9rem;

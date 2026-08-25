@@ -11,12 +11,13 @@
 <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="icons/icon-192.svg" />
 <title>MixColor — Calculateur de mélanges</title>
-<link rel="stylesheet" href="css/style.css?v=3" />
+<link rel="stylesheet" href="css/style.css?v=4" />
 </head>
 <body>
 
 <header class="app-header">
   <h1>MixColor</h1>
+  <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Activer le mode sombre">🌙</button>
 </header>
 
 <main>
@@ -64,6 +65,7 @@
   <section id="panel-simulate" class="panel" role="tabpanel" hidden>
     <div class="card">
       <p class="field-label">Choisissez jusqu'à 3 couleurs</p>
+      <input type="search" id="pigment-search" class="search-input" placeholder="Filtrer : jaune, ocre…" autocomplete="off" aria-label="Filtrer les pigments par nom" />
       <div class="chip-row" id="pigment-row" aria-label="Pigments disponibles"></div>
     </div>
 
@@ -86,10 +88,10 @@
   </section>
 </main>
 
-<script src="js/color.js?v=3"></script>
-<script src="js/colorNames.js?v=3"></script>
-<script src="js/palettes.js?v=3"></script>
-<script src="js/mixer.js?v=3"></script>
-<script src="js/app.js?v=3"></script>
+<script src="js/color.js?v=4"></script>
+<script src="js/colorNames.js?v=4"></script>
+<script src="js/palettes.js?v=4"></script>
+<script src="js/mixer.js?v=4"></script>
+<script src="js/app.js?v=4"></script>
 </body>
 </html>

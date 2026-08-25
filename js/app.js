@@ -23,6 +23,7 @@
   const partsList = el('parts-list');
   const copyFindBtn = el('copy-find');
 
+  const pigmentSearchInput = el('pigment-search');
   const pigmentRow = el('pigment-row');
   const partsEditorCard = el('parts-editor-card');
   const partsEditor = el('parts-editor');
@@ -47,6 +48,7 @@
       btn.addEventListener('click', () => {
         state.typeId = type.id;
         state.simulateSelection = [];
+        pigmentSearchInput.value = '';
         renderPaintTypes();
         renderPigmentChips();
         renderPartsEditor();
@@ -200,7 +202,18 @@
 
   function renderPigmentChips() {
     pigmentRow.innerHTML = '';
-    pigmentsForType(state.typeId).forEach((pigment) => {
+    const query = normalizeSearch(pigmentSearchInput.value);
+    const list = pigmentsForType(state.typeId).filter((p) => normalizeSearch(p.name).includes(query));
+
+    if (list.length === 0) {
+      const p = document.createElement('p');
+      p.className = 'no-match';
+      p.textContent = 'Aucun pigment trouvé.';
+      pigmentRow.appendChild(p);
+      return;
+    }
+
+    list.forEach((pigment) => {
       const selected = state.simulateSelection.some((s) => s.pigment.id === pigment.id);
       const btn = document.createElement('button');
       btn.className = 'chip';
@@ -210,6 +223,8 @@
       pigmentRow.appendChild(btn);
     });
   }
+
+  pigmentSearchInput.addEventListener('input', renderPigmentChips);
 
   function toggleSimulatePigment(pigment) {
     const idx = state.simulateSelection.findIndex((s) => s.pigment.id === pigment.id);
@@ -288,8 +303,42 @@
     });
   }
 
+  // --- Mode sombre ---------------------------------------------------------
+
+  const THEME_KEY = 'mixcolor-theme';
+  const themeToggle = el('theme-toggle');
+
+  function getStoredTheme() {
+    try { return localStorage.getItem(THEME_KEY); } catch { return null; }
+  }
+  function setStoredTheme(value) {
+    try { localStorage.setItem(THEME_KEY, value); } catch { /* stockage indisponible, tant pis */ }
+  }
+
+  function effectiveTheme() {
+    return getStoredTheme() || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  }
+
+  function applyTheme() {
+    const stored = getStoredTheme();
+    if (stored) {
+      document.documentElement.setAttribute('data-theme', stored);
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    const isDark = effectiveTheme() === 'dark';
+    themeToggle.textContent = isDark ? '☀️' : '🌙';
+    themeToggle.setAttribute('aria-label', isDark ? 'Activer le mode clair' : 'Activer le mode sombre');
+  }
+
+  themeToggle.addEventListener('click', () => {
+    setStoredTheme(effectiveTheme() === 'dark' ? 'light' : 'dark');
+    applyTheme();
+  });
+
   // --- Initialisation --------------------------------------------------------
 
+  applyTheme();
   renderPaintTypes();
   updatePaintTypeTip();
   renderPigmentChips();
