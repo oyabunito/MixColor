@@ -1,23 +1,47 @@
 /**
- * Recherche, parmi les pigments disponibles, la combinaison (1 à 3 couleurs)
- * et les proportions qui approchent le mieux une couleur cible.
+ * Recherche, parmi les pigments disponibles, la combinaison de couleurs et
+ * les proportions qui approchent le mieux une couleur cible.
+ *
+ * Stratégie : on part d'une recherche large sur 1 à 3 pigments, puis on
+ * essaie d'ajouter un 4e puis un 5e pigment — on ne les garde que s'ils
+ * améliorent vraiment le résultat. On termine par un affinage au pourcent
+ * près (descente de coordonnées) sur la combinaison retenue.
  */
+const MAX_PIGMENTS = 5;
+const EXTEND_MIN_GAIN = 1.5; // gain minimum de deltaE pour justifier un pigment de plus
+
 function findBestMix(targetHex, pigments) {
   const targetLab = rgbToLab(hexToRgb(targetHex));
-  let best = null;
 
-  const consider = (combo, weights) => {
-    const rgb01 = mixPigments(combo, weights);
-    const dist = labDistance(rgbToLab(rgb01.map((v) => v * 255)), targetLab);
+  let best = coarseSearch(pigments, targetLab);
+
+  for (let size = 4; size <= MAX_PIGMENTS; size++) {
+    best = tryExtend(best, pigments, targetLab, size);
+  }
+
+  const refinedWeights = refine(best.combo, best.weightsPercent, targetLab);
+  best = { combo: best.combo, weightsPercent: refinedWeights, ...evalMix(best.combo, refinedWeights, targetLab) };
+
+  return formatResult(best);
+}
+
+function evalMix(combo, weightsPercent, targetLab) {
+  const rgb01 = mixPigments(combo, weightsPercent);
+  const dist = labDistance(rgbToLab(rgb01.map((v) => v * 255)), targetLab);
+  return { dist, rgb01 };
+}
+
+function coarseSearch(pigments, targetLab) {
+  let best = null;
+  const consider = (combo, weightsPercent) => {
+    const { dist, rgb01 } = evalMix(combo, weightsPercent, targetLab);
     if (!best || dist < best.dist) {
-      best = { combo, weights: normalize(weights), dist, rgb01 };
+      best = { combo, weightsPercent, dist, rgb01 };
     }
   };
 
-  // 1 pigment seul
-  pigments.forEach((p) => consider([p], [1]));
+  pigments.forEach((p) => consider([p], [100]));
 
-  // 2 pigments
   for (let i = 0; i < pigments.length; i++) {
     for (let j = i + 1; j < pigments.length; j++) {
       for (let w = 5; w <= 95; w += 5) {
@@ -26,7 +50,6 @@ function findBestMix(targetHex, pigments) {
     }
   }
 
-  // 3 pigments (pas de 10%, en excluant les poids nuls déjà couverts ci-dessus)
   for (let i = 0; i < pigments.length; i++) {
     for (let j = i + 1; j < pigments.length; j++) {
       for (let k = j + 1; k < pigments.length; k++) {
@@ -34,90 +57,117 @@ function findBestMix(targetHex, pigments) {
           for (let b = 1; b <= 9 - a; b++) {
             const c = 10 - a - b;
             if (c < 1) continue;
-            consider([pigments[i], pigments[j], pigments[k]], [a, b, c]);
+            consider([pigments[i], pigments[j], pigments[k]], [a * 10, b * 10, c * 10]);
           }
         }
       }
     }
   }
 
-  best = refineLocally(best, targetLab);
-
-  return formatResult(best);
+  return best;
 }
 
-/**
- * Repart de la meilleure combinaison trouvée par la recherche large (pas de
- * 5 à 10%) et affine les proportions au pourcent près, dans un voisinage
- * autour de cet optimum grossier.
- */
-function refineLocally(best, targetLab) {
-  if (best.combo.length < 2) return best;
+/** Essaie d'ajouter un pigment de plus à `best`, ne le garde que si ça améliore nettement le résultat. */
+function tryExtend(best, pigments, targetLab, size) {
+  if (best.combo.length !== size - 1) return best;
 
-  const guess = best.weights.map((w) => Math.round(w * 100));
-  let refined = best;
+  const remaining = pigments.filter((p) => !best.combo.includes(p));
+  let candidate = null;
 
-  const tryWeights = (weights) => {
-    const rgb01 = mixPigments(best.combo, weights);
-    const dist = labDistance(rgbToLab(rgb01.map((v) => v * 255)), targetLab);
-    if (dist < refined.dist) {
-      refined = { combo: best.combo, weights: normalize(weights), dist, rgb01 };
+  remaining.forEach((extra) => {
+    for (let wExtra = 5; wExtra <= 40; wExtra += 5) {
+      const scale = (100 - wExtra) / 100;
+      const weightsPercent = roundToSum100([...best.weightsPercent.map((w) => w * scale), wExtra]);
+      const combo = [...best.combo, extra];
+      const { dist, rgb01 } = evalMix(combo, weightsPercent, targetLab);
+      if (!candidate || dist < candidate.dist) {
+        candidate = { combo, weightsPercent, dist, rgb01 };
+      }
     }
-  };
+  });
 
-  const RADIUS = 6;
-  if (best.combo.length === 2) {
-    const g = guess[0];
-    for (let a = Math.max(1, g - RADIUS); a <= Math.min(99, g + RADIUS); a++) {
-      tryWeights([a, 100 - a]);
-    }
-  } else {
-    const [ga, gb] = guess;
-    for (let a = Math.max(1, ga - RADIUS); a <= Math.min(98, ga + RADIUS); a++) {
-      for (let b = Math.max(1, gb - RADIUS); b <= Math.min(99 - a, gb + RADIUS); b++) {
-        const c = 100 - a - b;
-        if (c < 1) continue;
-        tryWeights([a, b, c]);
+  return candidate && best.dist - candidate.dist > EXTEND_MIN_GAIN ? candidate : best;
+}
+
+/** Descente de coordonnées : ajuste chaque proportion pas à pas pour coller de plus près à la cible. */
+function refine(combo, weightsPercent, targetLab) {
+  if (combo.length < 2) return weightsPercent;
+
+  let weights = weightsPercent.slice();
+  let bestDist = evalMix(combo, weights, targetLab).dist;
+  const steps = [5, 2, 1, -1, -2, -5];
+
+  let improved = true;
+  let guard = 0;
+  while (improved && guard < 40) {
+    improved = false;
+    guard++;
+    for (let i = 0; i < weights.length; i++) {
+      for (const step of steps) {
+        const trial = weights.slice();
+        trial[i] = Math.max(1, trial[i] + step);
+        const normalized = roundToSum100(trial);
+        const dist = evalMix(combo, normalized, targetLab).dist;
+        if (dist < bestDist - 1e-9) {
+          bestDist = dist;
+          weights = normalized;
+          improved = true;
+        }
       }
     }
   }
-
-  return refined;
+  return weights;
 }
 
-function normalize(weights) {
+function roundToSum100(weights) {
   const total = weights.reduce((a, w) => a + w, 0);
-  return weights.map((w) => w / total);
+  const rounded = weights.map((w) => Math.max(1, Math.round((w / total) * 100)));
+  let diff = 100 - rounded.reduce((a, b) => a + b, 0);
+  while (diff !== 0) {
+    const idx = rounded.indexOf(Math.max(...rounded));
+    if (diff > 0) {
+      rounded[idx] += 1;
+      diff--;
+    } else if (rounded[idx] > 1) {
+      rounded[idx] -= 1;
+      diff++;
+    } else {
+      break; // évite une boucle infinie sur un cas dégénéré
+    }
+  }
+  return rounded;
 }
 
 function gcd(a, b) {
   return b < 1e-6 ? a : gcd(b, a % b);
 }
 
-function simplifyRatio(percentages) {
-  const rounded = percentages.map((p) => Math.max(1, Math.round(p)));
-  let divisor = rounded.reduce((g, v) => gcd(g, v), rounded[0]);
-  divisor = divisor < 1 ? 1 : divisor;
-  const simplified = rounded.map((v) => Math.round(v / divisor));
-  const clean = simplified.every((v) => v <= 12);
-  return clean ? simplified : null;
+/** Convertit des pourcentages en un nombre de "parts" toujours affichable, simplifié si possible. */
+function toParts(percentages) {
+  const DENOM = 20;
+  const raw = percentages.map((p) => Math.max(1, Math.round((p / 100) * DENOM)));
+  let diff = DENOM - raw.reduce((a, b) => a + b, 0);
+  while (diff !== 0) {
+    const idx = raw.indexOf(Math.max(...raw));
+    if (diff > 0) { raw[idx] += 1; diff--; }
+    else if (raw[idx] > 1) { raw[idx] -= 1; diff++; }
+    else break;
+  }
+  const divisor = raw.reduce((g, v) => gcd(g, v), raw[0]);
+  return divisor > 1 ? raw.map((v) => v / divisor) : raw;
 }
 
 function formatResult(best) {
-  const percentages = best.weights.map((w) => Math.round(w * 100));
-  // Ajuste l'arrondi pour que la somme fasse bien 100.
-  const diff = 100 - percentages.reduce((a, b) => a + b, 0);
-  percentages[0] += diff;
-
+  const percentages = roundToSum100(best.weightsPercent);
   const resultHex = rgb01ToHex(best.rgb01);
   const precision = Math.max(0, Math.min(100, Math.round(100 - best.dist * 1.1)));
-  const ratio = best.combo.length > 1 ? simplifyRatio(percentages) : null;
+  const parts = toParts(percentages);
 
   return {
     parts: best.combo.map((p, i) => ({
       pigment: p,
       percent: percentages[i],
-      ratio: ratio ? ratio[i] : null,
+      ratio: parts[i],
     })),
     resultHex,
     precision,

@@ -15,7 +15,8 @@
 
   const targetColorInput = el('target-color');
   const targetHexInput = el('target-hex');
-  const presetRow = el('preset-row');
+  const colorSearchInput = el('color-search');
+  const searchResultsEl = el('search-results');
   const swatchTarget = el('swatch-target');
   const swatchResult = el('swatch-result');
   const precisionText = el('precision-text');
@@ -75,20 +76,71 @@
 
   // --- Mode "Trouver un mélange" -----------------------------------------
 
-  function renderPresets() {
-    presetRow.innerHTML = '';
-    TARGET_PRESETS.forEach((preset) => {
-      const btn = document.createElement('button');
-      btn.className = 'chip';
-      btn.innerHTML = `<span class="dot" style="background:${preset.hex}"></span>${preset.name}`;
-      btn.addEventListener('click', () => {
-        targetColorInput.value = preset.hex;
-        targetHexInput.value = preset.hex;
-        computeFind();
-      });
-      presetRow.appendChild(btn);
-    });
+  function searchColors(rawQuery) {
+    const query = normalizeSearch(rawQuery);
+    if (!query) return [];
+    const words = query.split(/\s+/).filter(Boolean);
+
+    return NAMED_COLORS
+      .map((color) => {
+        const nameKey = normalizeSearch(color.name);
+        const haystack = `${nameKey} ${color.tags.map(normalizeSearch).join(' ')}`;
+        if (!words.every((w) => haystack.includes(w))) return null;
+        const score = nameKey.includes(query) ? 0 : 1;
+        return { color, score };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.score - b.score || a.color.name.localeCompare(b.color.name, 'fr'))
+      .map((r) => r.color);
   }
+
+  function selectSearchResult(color) {
+    targetColorInput.value = color.hex;
+    targetHexInput.value = color.hex;
+    colorSearchInput.value = color.name;
+    searchResultsEl.hidden = true;
+    computeFind();
+  }
+
+  function renderSearchResults() {
+    const query = colorSearchInput.value.trim();
+    if (!query) {
+      searchResultsEl.hidden = true;
+      searchResultsEl.innerHTML = '';
+      return;
+    }
+
+    const matches = searchColors(query).slice(0, 12);
+    searchResultsEl.innerHTML = '';
+
+    if (matches.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'no-match';
+      li.textContent = 'Aucune couleur trouvée';
+      searchResultsEl.appendChild(li);
+    } else {
+      matches.forEach((color) => {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.innerHTML = `<span class="dot" style="background:${color.hex}"></span>${color.name}`;
+        btn.addEventListener('click', () => selectSearchResult(color));
+        li.appendChild(btn);
+        searchResultsEl.appendChild(li);
+      });
+    }
+    searchResultsEl.hidden = false;
+  }
+
+  colorSearchInput.addEventListener('input', renderSearchResults);
+  colorSearchInput.addEventListener('focus', () => {
+    if (colorSearchInput.value.trim()) renderSearchResults();
+  });
+  document.addEventListener('click', (e) => {
+    if (!colorSearchInput.contains(e.target) && !searchResultsEl.contains(e.target)) {
+      searchResultsEl.hidden = true;
+    }
+  });
 
   function isValidHex(hex) {
     return /^#[0-9a-fA-F]{6}$/.test(hex);
@@ -127,7 +179,7 @@
           <span class="dot" style="background:${barColor}"></span>
           <span class="part-info">
             <span class="part-name">${part.pigment.name}</span>
-            <span class="part-ratio">${part.ratio ? `${part.ratio} part${part.ratio > 1 ? 's' : ''}` : ''}</span>
+            <span class="part-ratio">${part.ratio} part${part.ratio > 1 ? 's' : ''}</span>
             <span class="bar-track"><span class="bar-fill" style="width:${part.percent}%;background:${barColor}"></span></span>
           </span>
           <span class="part-percent">${part.percent}%</span>
@@ -240,7 +292,6 @@
 
   renderPaintTypes();
   updatePaintTypeTip();
-  renderPresets();
   renderPigmentChips();
   computeFind();
 })();

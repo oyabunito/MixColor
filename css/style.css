@@ -166,6 +166,81 @@ input[type="color"] {
   text-transform: lowercase;
 }
 
+/* Recherche par nom */
+.search-wrap {
+  position: relative;
+  margin-top: 12px;
+}
+
+.search-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 0.95rem;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.search-results {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(20, 16, 8, 0.14);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.search-results li + li {
+  border-top: 1px solid var(--line);
+}
+
+.search-results button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: none;
+  padding: 10px 8px;
+  font-size: 0.9rem;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.search-results button:active {
+  background: var(--bg);
+}
+
+.search-results .dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  flex: none;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.search-results .no-match {
+  padding: 12px 10px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
 /* Swatches */
 .swatch-compare {
   display: flex;

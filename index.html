@@ -37,7 +37,11 @@
         <input type="color" id="target-color" value="#2f5233" aria-label="Choisir la couleur cible" />
         <input type="text" id="target-hex" value="#2f5233" maxlength="7" aria-label="Code hexadécimal" />
       </div>
-      <div class="chip-row" id="preset-row" aria-label="Couleurs suggérées"></div>
+
+      <div class="search-wrap">
+        <input type="search" id="color-search" class="search-input" placeholder="Chercher par nom : rouge, bordeaux, turquoise…" autocomplete="off" aria-label="Rechercher une couleur par nom" />
+        <ul class="search-results" id="search-results" hidden></ul>
+      </div>
     </div>
 
     <div class="card result-card">
@@ -83,6 +87,7 @@
 </main>
 
 <script src="js/color.js"></script>
+<script src="js/colorNames.js"></script>
 <script src="js/palettes.js"></script>
 <script src="js/mixer.js"></script>
 <script src="js/app.js"></script>

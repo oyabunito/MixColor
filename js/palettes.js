@@ -45,15 +45,3 @@ const PIGMENTS = [
 function pigmentsForType(typeId) {
   return PIGMENTS.filter((p) => p.types.includes(typeId));
 }
-
-// Couleurs cibles suggérées pour un démarrage rapide en mode "Trouver un mélange".
-const TARGET_PRESETS = [
-  { name: 'Vert forêt', hex: '#2f5233' },
-  { name: 'Bleu marine', hex: '#1b2a4a' },
-  { name: 'Rose poudré', hex: '#e8b4b8' },
-  { name: 'Marron chocolat', hex: '#4a2c1c' },
-  { name: 'Turquoise', hex: '#2fb8ac' },
-  { name: 'Corail', hex: '#ee6c4d' },
-  { name: 'Moutarde', hex: '#c9a227' },
-  { name: 'Prune', hex: '#5b2a5e' },
-];
